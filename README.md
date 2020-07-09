@@ -24,6 +24,8 @@ compile S2DS with gcc, then run it like:
 
 * Then start both `pub.py` and `sub.py` under zeromq, the order doesnot matter. you should 
 
+* Note that, so far, a run instance of S2DS is for one pair of producer and consumer, it exits when consumer disconnet.
+
 # Notes
 
 [07-09-2020] the current S2DS code was modified from an opensource project `git@github.com:vakuum/tcptunnel.git`. we may need to carefully understand its implementation, if we find it useful, we can clean up unnecesssary components. otherwise, we can remove it and start from scratch
