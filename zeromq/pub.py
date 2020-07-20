@@ -4,11 +4,23 @@
 import sys
 import zmq
 import time
+from optparse import OptionParser
+
+# Parse command line options and dump results
+def parseOptions():
+    "Parse command line options"
+    parser = OptionParser()
+    parser.add_option('--port', dest='port', default="50000", help='Publisher TCP port')
+    (options, args) = parser.parse_args()
+
+    return options, args
+
+opts, args = parseOptions()
 
 context = zmq.Context()
 
 socket = context.socket(zmq.PUB)
-socket.bind("tcp://*:50000")
+socket.bind("tcp://*:"+opts.port)
 
 for index in range(3600):
     time.sleep(2)
