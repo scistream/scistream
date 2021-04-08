@@ -47,9 +47,9 @@ char *get_current_timestamp(void){
 void set_options(int argc, char *argv[]){
     int opt;
     int index;
-    options.buffer_size = 4096;
-    options.recv_sz= 1024;
-    options.fwd_sz = 1024;
+    options.buffer_size = 40960; // default
+    options.recv_sz= 40960;
+    options.fwd_sz = 40960;
     do{
         opt = getopt_long(argc, argv, "", long_options, &index);
         switch (opt){
@@ -227,12 +227,13 @@ void *recv_thread_func(void *arg_ptr){
     thread_func_arg *arg = (thread_func_arg *)arg_ptr;
     circular_buffer *cb  = arg->cb;
     printf("starting receiving thread\n");
-    char buffer[options.buffer_size];
+    // char buffer[options.recv_sz];
+    char *buffer = malloc(options.recv_sz);
     long cb_cp;
     int recv_cnt;
     while (1){
         cb_cp = cb_free_cp(cb, 1);
-        // printf("cb capacity %ld\n", cb_cp);
+        printf("cb capacity %ld\n", cb_cp);
         if(cb_cp > 0){
             recv_cnt = recv(arg->op_socket, buffer, MIN(options.buffer_size, cb_cp), 0);
             if(recv_cnt > 0){
@@ -253,7 +254,8 @@ void *fwd_thread_func(void *arg_ptr){
     printf("starting forwarding thread\n");
     int fwd_cnt;
     long cb_cnt;
-    char buffer[options.buffer_size];
+    // char buffer[options.fwd_sz];
+    char *buffer = malloc(options.fwd_sz);
     while(1){
         cb_cnt = cb_pop_front(cb, buffer, options.buffer_size);
         if(cb_cnt > 0){
