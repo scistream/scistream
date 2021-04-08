@@ -1,4 +1,4 @@
-#include "circular_buffer.h"
+#include "cbuf.h"
 
 int cb_init(circular_buffer *cb, size_t capacity){
     cb->buffer = malloc(capacity);

@@ -15,7 +15,7 @@
 #include <pthread.h>
 
 #include "s2ds-buffer.h"
-#include "circular_buffer.h"
+#include "cbuf.h"
 
 struct struct_rc rc;
 struct struct_options options;
