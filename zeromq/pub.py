@@ -8,7 +8,7 @@ import time
 context = zmq.Context()
 
 socket = context.socket(zmq.PUB)
-socket.bind("tcp://*:50000")
+socket.bind("tcp://*:3333")
 
 for index in range(3600):
     time.sleep(2)
