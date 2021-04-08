@@ -1,5 +1,3 @@
-
-
 #include "circular_buffer.h"
 
 int cb_init(circular_buffer *cb, size_t capacity){
