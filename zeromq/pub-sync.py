@@ -10,8 +10,8 @@ logging.basicConfig(level=logging.DEBUG)
 def parseOptions():
     "Parse command line options"
     parser = OptionParser()
-    parser.add_option('--port', dest='port', default="50000", help='Publisher TCP port')
-    parser.add_option('--sync', dest='sync', default="51000", help='Publisher synchronization TCP port')
+    parser.add_option('--port', dest='port', default="3333", help='Publisher TCP port')
+    parser.add_option('--sync', dest='sync', default="3334", help='Publisher synchronization TCP port')
     parser.add_option('--ds', dest='ds', default=4, help='Data size in MB')
     parser.add_option('--st', dest='st', default=0.1, help='Sample time in seconds')
     parser.add_option('--ns', dest='ns', default=1000, help='Number of samples')

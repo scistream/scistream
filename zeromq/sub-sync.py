@@ -10,8 +10,8 @@ def parseOptions():
     "Parse command line options"
     parser = OptionParser()
     parser.add_option('--remote-host', dest='host', default="127.0.0.1", help='Remote host IP address')
-    parser.add_option('--remote-port', dest='port', default="50000", help='Remote TCP port')
-    parser.add_option('--sync', dest='sync', default="51000", help='Synchronization TCP port')
+    parser.add_option('--remote-port', dest='port', default="2222", help='Remote TCP port')
+    parser.add_option('--sync', dest='sync', default="2223", help='Synchronization TCP port')
     parser.add_option('--log-file', dest='fname', default="streaming_res.log", help='Log file name')
     (options, args) = parser.parse_args()
 
@@ -50,7 +50,7 @@ class Poller(Thread):
           if size >= 4194304:
               count += 1
           #logging.debug('MSG {} @ local time {}'.format(self.id, time.strftime('%H:%M:%S')))
-          logging.debug('poller {}: {} bytes @ local time {}'.format(self.id, size, time.strftime('%H:%M:%S')))
+          logging.debug('poller {}th {}: {} bytes @ local time {}'.format(count, self.id, size, time.strftime('%H:%M:%S')))
           if message == 'SciStream:STOP':
               t = time.time() - self.start
               results_log.write("%s,%s\n" % (t, count))

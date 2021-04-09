@@ -77,8 +77,8 @@ long cb_pop_front(circular_buffer *cb, void *buf, unsigned int max_sz){
     if(cb_free_cp(cb, 1) == cb->max_cap || max_sz == 0){
         return osz;
     }
-
     pthread_mutex_lock(&(cb->lock));
+    // print_cb_status(cb);
     if (cb->sidx < cb->eidx){ // 000111100
         osz = MIN(max_sz, cb->max_cap - cb_free_cp(cb, 0));
         memcpy(buf, cb->buffer + cb->sidx, osz);
@@ -96,7 +96,10 @@ long cb_pop_front(circular_buffer *cb, void *buf, unsigned int max_sz){
                 cb->sidx = 0;
             }
         }
+        cb->full=0;
     }
+    // printf("%ld bytes taken\n", osz);
+    // print_cb_status(cb);
     pthread_mutex_unlock(&(cb->lock));
 
     return osz;
