@@ -235,15 +235,14 @@ void *recv_thread_func(void *arg_ptr){
             recv_cnt = recv(arg->op_socket, buffer, MIN(options.buffer_size, cb_cp), 0);
             if(recv_cnt > 0){
                 cb_push_back(cb, buffer, recv_cnt);
-            }else{
+            }else if (recv_cnt == -1) {
                 printf("socket error. recv returned code: %d\n", recv_cnt);
-                break;
+                break; 
             }
         }else{
             usleep(10);
         }
     }
-    
     return 0;
 }
 
@@ -259,7 +258,7 @@ void *fwd_thread_func(void *arg_ptr){
         if(cb_cnt > 0){
             fwd_cnt = send(arg->op_socket, buffer, cb_cnt, 0);
             if (fwd_cnt < 0){
-                printf("socket error. send returned code: %d\n", fwd_cnt);
+                perror("fwd_thread_func: send()");
                 break;
             }
         }else{

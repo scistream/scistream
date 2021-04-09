@@ -10,6 +10,8 @@ int cb_init(circular_buffer *cb, size_t capacity){
     cb->eidx = 0;
     cb->full = 0;
     cb->max_cap = capacity;
+
+    pthread_mutex_init(&cb->lock, NULL);
     return CB_SUCCESS;
 }
 

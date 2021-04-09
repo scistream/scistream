@@ -28,13 +28,13 @@ class Poller(Thread):
       # Initialize log files
       results_log = open(opts.fname, 'a+')
 
-      # sync_context = zmq.Context()
-      # logging.info("SYNCing with Publisher...")
-      # sync_socket = sync_context.socket(zmq.REQ)
-      # sync_socket.connect("tcp://"+opts.host+":"+opts.sync)
-      # sync_socket.send_string("SYNC")
-      # resp = sync_socket.recv_string()
-      # logging.info("Received reply: %s" % resp)
+      sync_context = zmq.Context()
+      logging.info("SYNCing with Publisher...")
+      sync_socket = sync_context.socket(zmq.REQ)
+      sync_socket.connect("tcp://"+opts.host+":"+opts.sync)
+      sync_socket.send_string("SYNC")
+      resp = sync_socket.recv_string()
+      logging.info("Received reply: %s" % resp)
 
       self.start = time.time()
       logging.debug('start poller {} with topic {}'.format(self.id, self.topic))
