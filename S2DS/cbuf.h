@@ -26,5 +26,6 @@ int cb_init(circular_buffer *cb, size_t capacity);
 long cb_free_cp(circular_buffer *cb, unsigned char lock);
 int cb_push_back(circular_buffer *cb, const void *buf, unsigned int in_sz);
 long cb_pop_front(circular_buffer *cb, void *buf, unsigned int max_sz);
+void print_cb_status(circular_buffer *cb);
 
 #endif

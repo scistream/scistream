@@ -223,7 +223,7 @@ int build_tunnel(void){
 
 void *recv_thread_func(void *arg_ptr){
     thread_func_arg *arg = (thread_func_arg *)arg_ptr;
-    circular_buffer *cb  = arg->cb;
+    circular_buffer *cb  = (circular_buffer *)arg->cb;
     printf("starting receiving thread\n");
     char *buffer = malloc(options.buffer_size);
     long cb_cp;
@@ -239,6 +239,8 @@ void *recv_thread_func(void *arg_ptr){
                 printf("socket error. recv returned code: %d\n", recv_cnt);
                 break;
             }
+        }else{
+            usleep(10);
         }
     }
     
@@ -247,8 +249,8 @@ void *recv_thread_func(void *arg_ptr){
 
 void *fwd_thread_func(void *arg_ptr){
     thread_func_arg *arg = (thread_func_arg *)arg_ptr;
-    circular_buffer *cb  = arg->cb;
-    printf("starting forwarding thread\n");
+    circular_buffer *cb  = (circular_buffer *)arg->cb;
+    printf("starting forwarding thread, %lu\n", options.buffer_size);
     int fwd_cnt;
     long cb_cnt;
     char *buffer = malloc(options.buffer_size);
