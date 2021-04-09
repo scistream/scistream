@@ -24,7 +24,7 @@ socket = context.socket(zmq.PUB)
 socket.bind("tcp://*:3333")
 
 for index in range(3600):
-    time.sleep(2)
+    time.sleep(0.05)
     _msg = 'NASDA:' + '%04dth message from publisher @ %s' % (index, time.strftime('%H:%M:%S'))
     socket.send_string( _msg )
     print("published MSG: %s" % _msg)

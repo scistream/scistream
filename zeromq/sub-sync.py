@@ -1,5 +1,5 @@
 import time, zmq, sys
-import logging
+import logging, hashlib
 from threading import Thread
 from optparse import OptionParser
 
@@ -28,13 +28,13 @@ class Poller(Thread):
       # Initialize log files
       results_log = open(opts.fname, 'a+')
 
-      sync_context = zmq.Context()
-      logging.info("SYNCing with Publisher...")
-      sync_socket = sync_context.socket(zmq.REQ)
-      sync_socket.connect("tcp://"+opts.host+":"+opts.sync)
-      sync_socket.send_string("SYNC")
-      resp = sync_socket.recv_string()
-      logging.info("Received reply: %s" % resp)
+      # sync_context = zmq.Context()
+      # logging.info("SYNCing with Publisher...")
+      # sync_socket = sync_context.socket(zmq.REQ)
+      # sync_socket.connect("tcp://"+opts.host+":"+opts.sync)
+      # sync_socket.send_string("SYNC")
+      # resp = sync_socket.recv_string()
+      # logging.info("Received reply: %s" % resp)
 
       self.start = time.time()
       logging.debug('start poller {} with topic {}'.format(self.id, self.topic))
@@ -45,12 +45,12 @@ class Poller(Thread):
       self.loop = True
       count = 0
       while self.loop:
-          message = subscriber.recv_string()
+          message = subscriber.recv()
           size = sys.getsizeof(message)
           if size >= 4194304:
               count += 1
           #logging.debug('MSG {} @ local time {}'.format(self.id, time.strftime('%H:%M:%S')))
-          logging.debug('poller {}th {}: {} bytes @ local time {}'.format(count, self.id, size, time.strftime('%H:%M:%S')))
+          logging.debug('poller {}th {}: {} bytes @ local time {} {}'.format(count, self.id, size, time.strftime('%H:%M:%S'), hashlib.md5(message).hexdigest()))
           if message == 'SciStream:STOP':
               t = time.time() - self.start
               results_log.write("%s,%s\n" % (t, count))

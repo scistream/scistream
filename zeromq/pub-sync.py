@@ -1,7 +1,7 @@
 import sys
 import zmq
-import time
-import logging
+import time, hashlib
+import logging, string
 from optparse import OptionParser
 
 logging.basicConfig(level=logging.DEBUG)
@@ -25,14 +25,14 @@ if __name__ == '__main__':
     sample_time = float(opts.st)
     n = int(opts.ns)
 
-    sync_context = zmq.Context()
-    sync_socket = sync_context.socket(zmq.REP)
-    sync_socket.bind("tcp://*:%s" % opts.sync)
-    logging.info("SYNCing on port %s" % opts.sync)
-    message = sync_socket.recv_string()
-    logging.info("Received: %s" % message)
-    sync_socket.send_string("SYNC_REP")
-    logging.info("SYNCed")
+    # sync_context = zmq.Context()
+    # sync_socket = sync_context.socket(zmq.REP)
+    # sync_socket.bind("tcp://*:%s" % opts.sync)
+    # logging.info("SYNCing on port %s" % opts.sync)
+    # message = sync_socket.recv_string()
+    # logging.info("Received: %s" % message)
+    # sync_socket.send_string("SYNC_REP")
+    # logging.info("SYNCed")
 
     context = zmq.Context()
     socket = context.socket(zmq.PUB)
@@ -43,7 +43,7 @@ if __name__ == '__main__':
         time.sleep(sample_time)
         _msg = 'SciStream:'+('a' * size)
         socket.send_string( _msg )
-        logging.debug("published MSG %s of size %s" % (index, sys.getsizeof( _msg )))
+        logging.debug("published MSG %s of size %s, %s" % (index, sys.getsizeof( _msg ), hashlib.md5(_msg.encode()).hexdigest()))
 
     socket.send_string('SciStream:STOP')
     logging.info("Streaming ended, exiting...")

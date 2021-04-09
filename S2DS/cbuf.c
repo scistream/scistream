@@ -96,7 +96,7 @@ long cb_pop_front(circular_buffer *cb, void *buf, unsigned int max_sz){
                 cb->sidx = 0;
             }
         }
-        cb->full=0;
+        cb->full=0; // no matter what, it should be 0
     }
     // printf("%ld bytes taken\n", osz);
     // print_cb_status(cb);
@@ -107,7 +107,7 @@ long cb_pop_front(circular_buffer *cb, void *buf, unsigned int max_sz){
 
 void print_cb_status(circular_buffer *cb){
     printf("sidx\t eidx\t full\t maxcap\n");
-    printf("%-4lu\t %-4lu\t %-4d\t %-6lu\n", \
+    printf("%-4lu\t %-4lu\t %-4d\t %-6lu\n\n", \
            cb->sidx, cb->eidx, cb->full, cb->max_cap);
     return;
 }
