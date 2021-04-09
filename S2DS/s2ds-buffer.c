@@ -230,7 +230,6 @@ void *recv_thread_func(void *arg_ptr){
     int recv_cnt;
     while (1){
         cb_cp = cb_free_cp(cb, 1);
-        // printf("cb capacity %ld\n", cb_cp);
         if(cb_cp > 0){
             recv_cnt = recv(arg->op_socket, buffer, MIN(options.buffer_size, cb_cp), 0);
             if(recv_cnt > 0){
