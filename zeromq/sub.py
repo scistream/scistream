@@ -1,5 +1,3 @@
-#!/Users/zliu/usr/miniconda3/bin/python
-# -*- coding: UTF-8 -*-
 import time, zmq, sys
 from threading import Thread
 from optparse import OptionParser

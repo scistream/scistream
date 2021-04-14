@@ -28,7 +28,7 @@ class Poller(Thread):
       # Initialize log files
       results_log = open(opts.fname, 'a+')
 
-      sync_context = zmq.Context()
+      sync_context = zmq.Context(io_threads=2)
       logging.info("SYNCing with Publisher...")
       sync_socket = sync_context.socket(zmq.REQ)
       sync_socket.connect("tcp://"+opts.host+":"+opts.sync)
@@ -46,12 +46,13 @@ class Poller(Thread):
       count = 0
       while self.loop:
           message = subscriber.recv()
-          size = sys.getsizeof(message)
-          if size >= 4194304:
-              count += 1
-          #logging.debug('MSG {} @ local time {}'.format(self.id, time.strftime('%H:%M:%S')))
-          logging.debug('poller {}th {}: {} bytes @ local time {} {}'.format(count, self.id, size, time.strftime('%H:%M:%S'), hashlib.md5(message).hexdigest()))
-          if message == 'SciStream:STOP':
+          #size = sys.getsizeof(message)
+          #if size >= 4194304:
+          count += 1
+          if not (count%10):
+            logging.debug('{}: MSG {} @ local time {}'.format(count, self.id, time.strftime('%H:%M:%S')))
+          #logging.debug('poller {}th {}: {} bytes @ local time {} {}'.format(count, self.id, size, time.strftime('%H:%M:%S'), hashlib.md5(message).hexdigest()))
+          if message[11] == 'S':
               t = time.time() - self.start
               results_log.write("%s,%s\n" % (t, count))
               results_log.flush()

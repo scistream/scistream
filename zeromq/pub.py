@@ -1,4 +1,3 @@
-#!/Users/zliu/usr/miniconda3/bin/python
 # -*- coding: UTF-8 -*-
 
 import sys

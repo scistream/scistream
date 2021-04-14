@@ -39,11 +39,12 @@ if __name__ == '__main__':
     socket.bind("tcp://*:"+opts.port)
 
     logging.info("Starting Publisher...")
+    _msg = ('SciStream:' + 'a' * size)
     for index in range(n):
-        time.sleep(sample_time)
-        _msg = 'SciStream:'+('a' * size)
+        #time.sleep(sample_time)
         socket.send_string( _msg )
-        logging.debug("published MSG %s of size %s, %s" % (index, sys.getsizeof( _msg ), hashlib.md5(_msg.encode()).hexdigest()))
+        #logging.debug("published MSG %s of size %s, %s" % (index, sys.getsizeof( _msg )))#, hashlib.md5(_msg.encode()).hexdigest()))
+        if not (index%100): logging.debug("published MSG %s of size %s" % (index, len(_msg)))
 
     socket.send_string('SciStream:STOP')
     logging.info("Streaming ended, exiting...")
