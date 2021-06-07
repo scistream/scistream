@@ -35,6 +35,12 @@ static struct option long_options[] = {
     { 0, 0, 0, 0 }
 };
 
+/* Get current data and time information
+ * Arguments:
+ *   None
+ * Return Value:
+ *   char* containing a formatted timestamp
+ */
 char *get_current_timestamp(void){
     static char date_str[20];
     time_t date;
@@ -44,10 +50,18 @@ char *get_current_timestamp(void){
     return date_str;
 }
 
+/* Populate options struct using passed-in function arguments to main
+ * Arguments:
+ *   int argc     - argument count
+ *   char *argv[] - argument vector
+ * Return Value:
+ *   None
+ */
 void set_options(int argc, char *argv[]){
     int opt;
     int index;
-    options.buffer_size = 40960; // default
+    options.buffer_size = 40960; // Default circular buffer size
+
     do{
         opt = getopt_long(argc, argv, "", long_options, &index);
         switch (opt){
@@ -127,6 +141,13 @@ void set_options(int argc, char *argv[]){
     }
 }
 
+/* Initialize the server and begin listening for client connections
+ * Arguments:
+ *   None
+ * Return Value:
+ *   0 on success
+ *   1 on error
+ */
 int build_server(void){
     memset(&rc.server_addr, 0, sizeof(rc.server_addr));
 
@@ -166,6 +187,13 @@ int build_server(void){
     return 0;
 }
 
+/* Handle incoming client connections to the server
+ * Arguments:
+ *   None
+ * Return Value:
+ *   0 on success
+ *   1 on error
+ */
 int wait_for_clients(void){
     unsigned int client_addr_size;
     client_addr_size = sizeof(struct sockaddr_in);
@@ -191,6 +219,13 @@ int wait_for_clients(void){
     return 0;
 }
 
+/* Build tunnel between the server and remote host
+ * Arguments:
+ *   None
+ * Return Value:
+ *   0 on success
+ *   1 on error
+ */
 int build_tunnel(void){
     rc.remote_host = gethostbyname(options.remote_host);
     if (rc.remote_host == NULL){
@@ -211,6 +246,7 @@ int build_tunnel(void){
         return 1;
     }
 
+    // Connect the remote host's socket to the remote host's address
     if (connect(rc.remote_socket, (struct sockaddr *) &rc.remote_addr, sizeof(rc.remote_addr)) < 0){
         perror("build_tunnel: connect()");
         return 1;
@@ -221,6 +257,12 @@ int build_tunnel(void){
     return 0;
 }
 
+/* Function for threads receiving data
+ * Arguments:
+ *   void *arg_ptr - thread_func_arg* containing socket and circular buffer information
+ * Return Value:
+ *   0 on exit
+ */
 void *recv_thread_func(void *arg_ptr){
     thread_func_arg *arg = (thread_func_arg *)arg_ptr;
     circular_buffer *cb  = (circular_buffer *)arg->cb;
@@ -236,7 +278,7 @@ void *recv_thread_func(void *arg_ptr){
                 cb_push_back(cb, buffer, recv_cnt);
             }else if (recv_cnt == -1) {
                 printf("socket error. recv returned code: %d\n", recv_cnt);
-                break; 
+                break;
             }
         }else{
             usleep(10);
@@ -245,6 +287,12 @@ void *recv_thread_func(void *arg_ptr){
     return 0;
 }
 
+/* Function for threads forwarding data
+ * Arguments:
+ *   void *arg_ptr - thread_func_arg* containing socket and circular buffer information
+ * Return Value:
+ *   0 on exit
+ */
 void *fwd_thread_func(void *arg_ptr){
     thread_func_arg *arg = (thread_func_arg *)arg_ptr;
     circular_buffer *cb  = (circular_buffer *)arg->cb;
@@ -261,12 +309,20 @@ void *fwd_thread_func(void *arg_ptr){
                 break;
             }
         }else{
-            usleep(10); // ideally to be event-driven to minimize latency overhead, or trade-in CPU
+            usleep(10); // Note: ideally should be event-driven to minimize latency overhead, or trade-in CPU
         }
     }
     return 0;
 }
 
+/* Main function for setting up communication between the server, client, and remote host
+ * Arguments:
+ *   int argc     - argument count
+ *   char *argv[] - argument vector
+ * Return Value:
+ *   0 on success
+ *   1 on error
+ */
 int main(int argc, char *argv[])
 {
     int ret_code;
@@ -298,7 +354,7 @@ int main(int argc, char *argv[])
         printf("MEM error when init\n");
     }
 
-// Client to Server
+    // Client to Server
     pthread_t recv_thread_c2s, fwd_thread_c2s;
     thread_func_arg tdf_arg_recv_c2s, tdf_arg_fwd_c2s;
     tdf_arg_recv_c2s.cb = (void *)&cbuf_c2s;
@@ -310,7 +366,7 @@ int main(int argc, char *argv[])
     tdf_arg_fwd_c2s.op_socket  = rc.remote_socket;
     pthread_create( &fwd_thread_c2s,  NULL, fwd_thread_func,  (void*) &tdf_arg_fwd_c2s);
 
-// Server to Client
+    // Server to Client
     pthread_t recv_thread_s2c, fwd_thread_s2c;
     thread_func_arg tdf_arg_recv_s2c, tdf_arg_fwd_s2c;
     tdf_arg_recv_s2c.cb = (void *)&cbuf_s2c;
@@ -323,9 +379,9 @@ int main(int argc, char *argv[])
     pthread_create( &fwd_thread_s2c,  NULL, fwd_thread_func,  (void*) &tdf_arg_fwd_s2c);
 
     pthread_join( recv_thread_c2s, NULL);
-    pthread_join( fwd_thread_c2s,  NULL); 
+    pthread_join( fwd_thread_c2s,  NULL);
     pthread_join( recv_thread_s2c, NULL);
-    pthread_join( fwd_thread_s2c,  NULL); 
+    pthread_join( fwd_thread_s2c,  NULL);
 
     exit(0);
 }

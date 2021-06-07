@@ -30,31 +30,30 @@ struct struct_settings {
 };
 
 struct struct_options {
-    const char *local_port;
-    const char *remote_host;
-    const char *remote_port;
-    const char *bind_address;
-    const char *client_address;
-    size_t buffer_size;
-    size_t recv_sz;
-    size_t fwd_sz;
+    const char *local_port;     // Port that S2DS will listen on and the data consumer will connect to
+    const char *remote_host;    // IP address of the remote host
+    const char *remote_port;    // Port of the remote host
+    const char *bind_address;   // IP address S2DS should be binded to
+    const char *client_address; // IP address S2DS should accept connection from
+    size_t buffer_size;         // Size (in bytes) of receive/forward buffers (Default: 40960)
+    size_t recv_sz;             // TODO: Unused
+    size_t fwd_sz;              // TODO: Unused
 };
 
 struct struct_rc {
-    int server_socket;
-    int client_socket;
-    int remote_socket;
+    int server_socket; // Socket FD of the server
+    int client_socket; // Socket FD of the client
+    int remote_socket; // Socket FD of the remote host
 
-    struct sockaddr_in server_addr;
-    struct sockaddr_in client_addr;
-    struct sockaddr_in remote_addr;
-    struct hostent *remote_host;
+    struct sockaddr_in server_addr; // Server address information
+    struct sockaddr_in client_addr; // Client address information
+    struct sockaddr_in remote_addr; // Remote host address information
+    struct hostent *remote_host; // Remote host host information
 };
 
 typedef struct thread_func_arg_struct {
-    int op_socket;
-    void *cb;
+    int op_socket; // Socket FD to send/receive data
+    void *cb;      // Circular buffer to send/receive data
 }thread_func_arg;
 
 #endif
-
