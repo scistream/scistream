@@ -52,7 +52,7 @@ class Poller(Thread):
           if not (count%10):
             logging.debug('{}: MSG {} @ local time {}'.format(count, self.id, time.strftime('%H:%M:%S')))
           #logging.debug('poller {}th {}: {} bytes @ local time {} {}'.format(count, self.id, size, time.strftime('%H:%M:%S'), hashlib.md5(message).hexdigest()))
-          if message[11] == 'S':
+          if message.decode("utf-8")[10] == 'S':
               t = time.time() - self.start
               results_log.write("%s,%s\n" % (t, count))
               results_log.flush()
