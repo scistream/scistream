@@ -397,7 +397,8 @@ int use_tunnel(void)
 
 		if (FD_ISSET(rc.client_socket, &io))
 		{
-			int count = recv(rc.client_socket, buffer, sizeof(buffer), 0);
+			//int count = recv(rc.client_socket, buffer, sizeof(buffer), 0);
+            int count = recv(rc.client_socket, buffer, options.buffer_size, 0);
 			if (count < 0)
 			{
 				perror("use_tunnel: recv(rc.client_socket)");
@@ -431,7 +432,8 @@ int use_tunnel(void)
 
 		if (FD_ISSET(rc.remote_socket, &io))
 		{
-			int count = recv(rc.remote_socket, buffer, sizeof(buffer), 0);
+			//int count = recv(rc.remote_socket, buffer, sizeof(buffer), 0);
+            int count = recv(rc.remote_socket, buffer, options.buffer_size, 0);
 			if (count < 0)
 			{
 				perror("use_tunnel: recv(rc.remote_socket)");
