@@ -233,7 +233,7 @@ int build_server(void)
 		perror("build_server: socket()");
 		return 1;
 	}
-	
+
 	int optval = 1;
 #ifdef __MINGW32__
 	if (setsockopt(rc.server_socket, SOL_SOCKET, SO_REUSEADDR, (const char *) &optval, sizeof(optval)) < 0)
@@ -375,7 +375,8 @@ int build_tunnel(void)
 int use_tunnel(void)
 {
 	fd_set io;
-	char buffer[options.buffer_size];
+	//char buffer[options.buffer_size];
+    char *buffer = malloc(options.buffer_size);
 
 	for (;;)
 	{
@@ -532,4 +533,3 @@ void print_missing(const char *message)
 	fprintf(stderr, "%s: %s\n", name, message);
 	print_helpinfo();
 }
-
