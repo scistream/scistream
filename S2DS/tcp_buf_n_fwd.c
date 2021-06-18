@@ -376,7 +376,9 @@ int use_tunnel(void)
 {
 	fd_set io;
 	//char buffer[options.buffer_size];
-    char *buffer = malloc(options.buffer_size);
+    char *buffer;
+
+    buffer = (char *)malloc(options.buffer_size);
 
 	for (;;)
 	{
