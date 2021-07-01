@@ -21,6 +21,9 @@ struct struct_rc rc;
 struct struct_options options;
 struct struct_settings settings = { 0, 0, 0, 0, 0, 0, 0, 0, 0 };
 
+char rm_host[16]; // Buffer for if remote host is not inputted
+char rm_port[6]; // Buffer for if remote port is not inputted
+
 static struct option long_options[] = {
     { "local-port",    required_argument, NULL, LOCAL_PORT_OPTION },
     { "remote-host",   required_argument, NULL, REMOTE_HOST_OPTION },
@@ -124,21 +127,6 @@ void set_options(int argc, char *argv[]){
             }
         }
     }while (opt != -1);
-
-    if (!settings.local_port){
-        printf("missing '--local-port=' option.\n");
-        exit(1);
-    }
-
-    if (!settings.remote_port){
-        printf("missing '--remote-port=' option.\n");
-        exit(1);
-    }
-
-    if (!settings.remote_host){
-        printf("missing '--remote-host=' option.\n");
-        exit(1);
-    }
 }
 
 /* Initialize the server and begin listening for client connections
@@ -151,7 +139,12 @@ void set_options(int argc, char *argv[]){
 int build_server(void){
     memset(&rc.server_addr, 0, sizeof(rc.server_addr));
 
-    rc.server_addr.sin_port = htons(atoi(options.local_port));
+    if (settings.local_port) {
+      rc.server_addr.sin_port = htons(atoi(options.local_port));
+    } else {
+      rc.server_addr.sin_port = htons(0);
+    }
+
     rc.server_addr.sin_family = AF_INET;
     rc.server_addr.sin_addr.s_addr = INADDR_ANY;
 
@@ -176,14 +169,28 @@ int build_server(void){
         return 1;
     }
 
-    if (listen(rc.server_socket, 1) < 0){
+    if (listen(rc.server_socket, 1) < 0) {
         perror("build_server: listen()");
         return 1;
-    }else{
-        if (settings.log){
-            printf("> %s: waiting for connection on port %s\n", get_current_timestamp(), options.local_port);
+    }
+
+    struct sockaddr_in sin;
+    socklen_t slen = sizeof(sin);
+    if (getsockname(rc.server_socket, (struct sockaddr *) &sin, &slen) == -1) {
+        perror("getsockname");
+    } else {
+        if (settings.log) {
+            printf("> %s: waiting for connection on port %d\n", get_current_timestamp(), ntohs(sin.sin_port));
+        }
+
+        if (!settings.local_port) {
+          // Used by s2cs.py to get OS-allocated port
+          // TODO: If need to print out server IP, need to wait for connection if no bind_address
+          printf("%d\n", ntohs(sin.sin_port));
+          fflush(stdout);
         }
     }
+
     return 0;
 }
 
@@ -333,6 +340,21 @@ int main(int argc, char *argv[])
         exit(1);
     }
 
+    // s2cs.py will print out desired remote_host and remote_port (ip:port)
+    if (!settings.remote_host || !settings.remote_port) {
+      if (scanf("%15[^:]:%5s", rm_host, rm_port) != 2) {
+        printf("Failed to read in remote host and remote port\n");
+        exit(1);
+      } else {
+        options.remote_host = rm_host;
+        options.remote_port = rm_port;
+        if (settings.log){
+            printf("> %s: Read in remote host and port: %s:%s\n", get_current_timestamp(), rm_host, rm_port);
+        }
+      }
+    }
+
+    // TODO: HANGS HERE
     ret_code = wait_for_clients();
     if(ret_code != 0){
         printf("Building client connection Failed\n");
