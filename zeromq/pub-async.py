@@ -42,13 +42,13 @@ def consumer():
         # logging.debug("sent one unit of data @ %f" % time.time())
         socket.send_string( _msg )
         dq.task_done()
-        
+
 dq = queue.Queue()
 
 threading.Thread(target=consumer, daemon=True).start()
 
 for data_idx in range(opts.ns):
-    time.sleep(opts.st) 
+    time.sleep(opts.st)
     dq.put(data_idx)
     logging.debug("produced one unit of data @ %f" % time.time())
 
@@ -56,5 +56,9 @@ for data_idx in range(opts.ns):
 dq.join()
 
 socket.send_string('SciStream:STOP')
-logging.info("Streaming ended, exiting...")
+logging.info("Streaming ended, SYNCing the exit...")
+message = sync_socket.recv_string()
+logging.info("Received: %s" % message)
+sync_socket.send_string("FIN_ACK")
+logging.info("Bye, bye...")
 sys.exit(0)

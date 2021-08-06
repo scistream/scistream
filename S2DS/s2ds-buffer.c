@@ -277,6 +277,8 @@ void *recv_thread_func(void *arg_ptr){
     char *buffer = malloc(options.buffer_size);
     long cb_cp;
     int recv_cnt;
+    long t = time(0);
+    float usage;
     while (1){
         cb_cp = cb_free_cp(cb, 1);
         if(cb_cp > 0){
@@ -290,6 +292,12 @@ void *recv_thread_func(void *arg_ptr){
         }else{
             usleep(10);
         }
+        if (time(0) >= t+1)
+	    {
+            usage = 100*(cb_cp/options.buffer_size);
+	        printf("> %s: recv buffer size: %.2f\n", get_current_timestamp(), usage);
+	        t = time(0);
+	    }
     }
     return 0;
 }
@@ -306,7 +314,10 @@ void *fwd_thread_func(void *arg_ptr){
     printf("starting forwarding thread, %lu\n", options.buffer_size);
     int fwd_cnt;
     long cb_cnt;
+    long cb_cp;
     char *buffer = malloc(options.buffer_size);
+    long t = time(0);
+    float usage;
     while(1){
         cb_cnt = cb_pop_front(cb, buffer, options.buffer_size);
         if(cb_cnt > 0){
@@ -318,6 +329,13 @@ void *fwd_thread_func(void *arg_ptr){
         }else{
             usleep(10); // Note: ideally should be event-driven to minimize latency overhead, or trade-in CPU
         }
+        if (time(0) >= t+1)
+	    {
+            cb_cp = cb_free_cp(cb, 1);
+            usage = 100*(cb_cp/options.buffer_size);
+	        printf("> %s: fwd buffer size: %.2f\n", get_current_timestamp(), usage);
+	        t = time(0);
+	    }
     }
     return 0;
 }

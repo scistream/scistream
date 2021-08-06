@@ -233,7 +233,7 @@ int build_server(void)
 		perror("build_server: socket()");
 		return 1;
 	}
-	
+
 	int optval = 1;
 #ifdef __MINGW32__
 	if (setsockopt(rc.server_socket, SOL_SOCKET, SO_REUSEADDR, (const char *) &optval, sizeof(optval)) < 0)
@@ -375,7 +375,10 @@ int build_tunnel(void)
 int use_tunnel(void)
 {
 	fd_set io;
-	char buffer[options.buffer_size];
+	//char buffer[options.buffer_size];
+    char *buffer;
+
+    buffer = (char *)malloc(options.buffer_size);
 
 	for (;;)
 	{
@@ -383,7 +386,8 @@ int use_tunnel(void)
 		FD_SET(rc.client_socket, &io);
 		FD_SET(rc.remote_socket, &io);
 
-		memset(buffer, 0, sizeof(buffer));
+		//memset(buffer, 0, sizeof(buffer));
+        memset(buffer, 0, options.buffer_size);
 
 		if (select(fd(), &io, NULL, NULL, NULL) < 0)
 		{
@@ -393,7 +397,8 @@ int use_tunnel(void)
 
 		if (FD_ISSET(rc.client_socket, &io))
 		{
-			int count = recv(rc.client_socket, buffer, sizeof(buffer), 0);
+			//int count = recv(rc.client_socket, buffer, sizeof(buffer), 0);
+            int count = recv(rc.client_socket, buffer, options.buffer_size, 0);
 			if (count < 0)
 			{
 				perror("use_tunnel: recv(rc.client_socket)");
@@ -427,7 +432,8 @@ int use_tunnel(void)
 
 		if (FD_ISSET(rc.remote_socket, &io))
 		{
-			int count = recv(rc.remote_socket, buffer, sizeof(buffer), 0);
+			//int count = recv(rc.remote_socket, buffer, sizeof(buffer), 0);
+            int count = recv(rc.remote_socket, buffer, options.buffer_size, 0);
 			if (count < 0)
 			{
 				perror("use_tunnel: recv(rc.remote_socket)");
@@ -532,4 +538,3 @@ void print_missing(const char *message)
 	fprintf(stderr, "%s: %s\n", name, message);
 	print_helpinfo();
 }
-
