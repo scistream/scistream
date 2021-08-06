@@ -22,7 +22,8 @@ class Poller(Thread):
       opts, args = parseOptions()
       print('start poller {} with topic {}'.format(self.id, self.topic))
       subscriber = context.socket(zmq.SUB)
-      subscriber.connect("tcp://127.0.0.1:2222")
+      subscriber.connect("tcp://127.0.0.1:" + opts.port)
+    #   subscriber.connect("tcp://localhost:5001")
       subscriber.setsockopt_string(zmq.SUBSCRIBE, self.topic)
       self.loop = True
       while self.loop:

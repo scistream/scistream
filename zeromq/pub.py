@@ -20,7 +20,8 @@ context = zmq.Context()
 
 socket = context.socket(zmq.PUB)
 
-socket.bind("tcp://*:3333")
+socket.bind("tcp://127.0.0.1:" + opts.port)
+# socket.bind("tcp://*:3333")
 
 for index in range(3600):
     time.sleep(0.05)

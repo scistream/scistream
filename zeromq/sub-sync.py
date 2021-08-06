@@ -54,7 +54,7 @@ class Poller(Thread):
           if not (count%10):
               logging.debug('{}: MSG {} @ local time {}'.format(count, message[:11], time.strftime('%H:%M:%S')))
           #logging.debug('poller {}th {}: {} bytes @ local time {} {}'.format(count, self.id, size, time.strftime('%H:%M:%S'), hashlib.md5(message).hexdigest()))
-          if message == 'SciStream:STOP':
+          if message.decode("utf-8") == 'SciStream:STOP':
               t = t_last_msg - self.start
               logging.info("Experiment time: %s seconds, %s samples received." % (t, count-1))
               results_log.write("%s,%s\n" % (t, count-1))

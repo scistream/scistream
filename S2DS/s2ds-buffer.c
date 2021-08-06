@@ -21,6 +21,9 @@ struct struct_rc rc;
 struct struct_options options;
 struct struct_settings settings = { 0, 0, 0, 0, 0, 0, 0, 0, 0 };
 
+char rm_host[16]; // Buffer for if remote host is not inputted
+char rm_port[6]; // Buffer for if remote port is not inputted
+
 static struct option long_options[] = {
     { "local-port",    required_argument, NULL, LOCAL_PORT_OPTION },
     { "remote-host",   required_argument, NULL, REMOTE_HOST_OPTION },
@@ -35,6 +38,12 @@ static struct option long_options[] = {
     { 0, 0, 0, 0 }
 };
 
+/* Get current data and time information
+ * Arguments:
+ *   None
+ * Return Value:
+ *   char* containing a formatted timestamp
+ */
 char *get_current_timestamp(void){
     static char date_str[20];
     time_t date;
@@ -44,10 +53,18 @@ char *get_current_timestamp(void){
     return date_str;
 }
 
+/* Populate options struct using passed-in function arguments to main
+ * Arguments:
+ *   int argc     - argument count
+ *   char *argv[] - argument vector
+ * Return Value:
+ *   None
+ */
 void set_options(int argc, char *argv[]){
     int opt;
     int index;
-    options.buffer_size = 40960; // default
+    options.buffer_size = 40960; // Default circular buffer size
+
     do{
         opt = getopt_long(argc, argv, "", long_options, &index);
         switch (opt){
@@ -110,27 +127,24 @@ void set_options(int argc, char *argv[]){
             }
         }
     }while (opt != -1);
-
-    if (!settings.local_port){
-        printf("missing '--local-port=' option.\n");
-        exit(1);
-    }
-
-    if (!settings.remote_port){
-        printf("missing '--remote-port=' option.\n");
-        exit(1);
-    }
-
-    if (!settings.remote_host){
-        printf("missing '--remote-host=' option.\n");
-        exit(1);
-    }
 }
 
+/* Initialize the server and begin listening for client connections
+ * Arguments:
+ *   None
+ * Return Value:
+ *   0 on success
+ *   1 on error
+ */
 int build_server(void){
     memset(&rc.server_addr, 0, sizeof(rc.server_addr));
 
-    rc.server_addr.sin_port = htons(atoi(options.local_port));
+    if (settings.local_port) {
+      rc.server_addr.sin_port = htons(atoi(options.local_port));
+    } else {
+      rc.server_addr.sin_port = htons(0);
+    }
+
     rc.server_addr.sin_family = AF_INET;
     rc.server_addr.sin_addr.s_addr = INADDR_ANY;
 
@@ -155,17 +169,38 @@ int build_server(void){
         return 1;
     }
 
-    if (listen(rc.server_socket, 1) < 0){
+    if (listen(rc.server_socket, 1) < 0) {
         perror("build_server: listen()");
         return 1;
-    }else{
-        if (settings.log){
-            printf("> %s: waiting for connection on port %s\n", get_current_timestamp(), options.local_port);
+    }
+
+    struct sockaddr_in sin;
+    socklen_t slen = sizeof(sin);
+    if (getsockname(rc.server_socket, (struct sockaddr *) &sin, &slen) == -1) {
+        perror("getsockname");
+    } else {
+        if (settings.log) {
+            printf("> %s: waiting for connection on port %d\n", get_current_timestamp(), ntohs(sin.sin_port));
+        }
+
+        if (!settings.local_port) {
+          // Used by s2cs.py to get OS-allocated port
+          // TODO: If need to print out server IP, need to wait for connection if no bind_address
+          printf("%d\n", ntohs(sin.sin_port));
+          fflush(stdout);
         }
     }
+
     return 0;
 }
 
+/* Handle incoming client connections to the server
+ * Arguments:
+ *   None
+ * Return Value:
+ *   0 on success
+ *   1 on error
+ */
 int wait_for_clients(void){
     unsigned int client_addr_size;
     client_addr_size = sizeof(struct sockaddr_in);
@@ -191,6 +226,13 @@ int wait_for_clients(void){
     return 0;
 }
 
+/* Build tunnel between the server and remote host
+ * Arguments:
+ *   None
+ * Return Value:
+ *   0 on success
+ *   1 on error
+ */
 int build_tunnel(void){
     rc.remote_host = gethostbyname(options.remote_host);
     if (rc.remote_host == NULL){
@@ -211,6 +253,7 @@ int build_tunnel(void){
         return 1;
     }
 
+    // Connect the remote host's socket to the remote host's address
     if (connect(rc.remote_socket, (struct sockaddr *) &rc.remote_addr, sizeof(rc.remote_addr)) < 0){
         perror("build_tunnel: connect()");
         return 1;
@@ -221,6 +264,12 @@ int build_tunnel(void){
     return 0;
 }
 
+/* Function for threads receiving data
+ * Arguments:
+ *   void *arg_ptr - thread_func_arg* containing socket and circular buffer information
+ * Return Value:
+ *   0 on exit
+ */
 void *recv_thread_func(void *arg_ptr){
     thread_func_arg *arg = (thread_func_arg *)arg_ptr;
     circular_buffer *cb  = (circular_buffer *)arg->cb;
@@ -253,6 +302,12 @@ void *recv_thread_func(void *arg_ptr){
     return 0;
 }
 
+/* Function for threads forwarding data
+ * Arguments:
+ *   void *arg_ptr - thread_func_arg* containing socket and circular buffer information
+ * Return Value:
+ *   0 on exit
+ */
 void *fwd_thread_func(void *arg_ptr){
     thread_func_arg *arg = (thread_func_arg *)arg_ptr;
     circular_buffer *cb  = (circular_buffer *)arg->cb;
@@ -272,7 +327,7 @@ void *fwd_thread_func(void *arg_ptr){
                 break;
             }
         }else{
-            usleep(10); // ideally to be event-driven to minimize latency overhead, or trade-in CPU
+            usleep(10); // Note: ideally should be event-driven to minimize latency overhead, or trade-in CPU
         }
         if (time(0) >= t+1)
 	    {
@@ -285,6 +340,14 @@ void *fwd_thread_func(void *arg_ptr){
     return 0;
 }
 
+/* Main function for setting up communication between the server, client, and remote host
+ * Arguments:
+ *   int argc     - argument count
+ *   char *argv[] - argument vector
+ * Return Value:
+ *   0 on success
+ *   1 on error
+ */
 int main(int argc, char *argv[])
 {
     int ret_code;
@@ -295,6 +358,21 @@ int main(int argc, char *argv[])
         exit(1);
     }
 
+    // s2cs.py will print out desired remote_host and remote_port (ip:port)
+    if (!settings.remote_host || !settings.remote_port) {
+      if (scanf("%15[^:]:%5s", rm_host, rm_port) != 2) {
+        printf("Failed to read in remote host and remote port\n");
+        exit(1);
+      } else {
+        options.remote_host = rm_host;
+        options.remote_port = rm_port;
+        if (settings.log){
+            printf("> %s: Read in remote host and port: %s:%s\n", get_current_timestamp(), rm_host, rm_port);
+        }
+      }
+    }
+
+    // TODO: HANGS HERE
     ret_code = wait_for_clients();
     if(ret_code != 0){
         printf("Building client connection Failed\n");
@@ -316,7 +394,7 @@ int main(int argc, char *argv[])
         printf("MEM error when init\n");
     }
 
-// Client to Server
+    // Client to Server
     pthread_t recv_thread_c2s, fwd_thread_c2s;
     thread_func_arg tdf_arg_recv_c2s, tdf_arg_fwd_c2s;
     tdf_arg_recv_c2s.cb = (void *)&cbuf_c2s;
@@ -328,7 +406,7 @@ int main(int argc, char *argv[])
     tdf_arg_fwd_c2s.op_socket  = rc.remote_socket;
     pthread_create( &fwd_thread_c2s,  NULL, fwd_thread_func,  (void*) &tdf_arg_fwd_c2s);
 
-// Server to Client
+    // Server to Client
     pthread_t recv_thread_s2c, fwd_thread_s2c;
     thread_func_arg tdf_arg_recv_s2c, tdf_arg_fwd_s2c;
     tdf_arg_recv_s2c.cb = (void *)&cbuf_s2c;
